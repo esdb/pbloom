@@ -8,34 +8,37 @@ import (
 
 func Test_one_location(t *testing.T) {
 	should := require.New(t)
-	pbf := New(256, 1)
+	strategy := NewHashingStrategy(HasherFnv, 256, 1)
+	pbf := strategy.New()
 	slot17 := biter.SetBits[17]
-	pbf.Put(HasherFnv, slot17, []byte("hello"))
-	result := pbf.Find(HasherFnv, []byte("hello"))
+	strategy.Put(pbf, slot17, []byte("hello"))
+	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(biter.Bits(0), result)
 	should.Equal(17, result.ScanForward()())
-	result = pbf.Find(HasherFnv, []byte("world2"))
+	result = strategy.Find(pbf, []byte("world2"))
 	should.Equal(biter.Bits(0), result)
 }
 
 func Test_seven_locations(t *testing.T) {
 	should := require.New(t)
-	pbf := New(256, 7)
+	strategy := NewHashingStrategy(HasherFnv,256, 7)
+	pbf := strategy.New()
 	slot17 := biter.SetBits[17]
-	pbf.Put(HasherFnv, slot17, []byte("hello"))
-	result := pbf.Find(HasherFnv, []byte("hello"))
+	strategy.Put(pbf, slot17, []byte("hello"))
+	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(0, result)
 	should.Equal(17, result.ScanForward()())
 }
 
 func Test_two_slots(t *testing.T) {
 	should := require.New(t)
-	pbf := New(256, 1)
+	strategy := NewHashingStrategy(HasherFnv, 256, 1)
+	pbf := strategy.New()
 	slot17 := biter.SetBits[17]
-	pbf.Put(HasherFnv, slot17, []byte("hello"))
+	strategy.Put(pbf, slot17, []byte("hello"))
 	slot18 := biter.SetBits[18]
-	pbf.Put(HasherFnv, slot18, []byte("hello"))
-	result := pbf.Find(HasherFnv, []byte("hello"))
+	strategy.Put(pbf, slot18, []byte("hello"))
+	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(biter.Bits(0), result)
 	iter := result.ScanForward()
 	should.Equal(17, iter())

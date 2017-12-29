@@ -8,35 +8,43 @@ import (
 const SlotNotFound = biter.NotFound
 
 // 64 slot bloom filter
-type ParallelBloomFilter struct {
-	locationsPerElement int
-	locations           []biter.Bits
+type ParallelBloomFilter []biter.Bits
+
+type HashingStrategy struct {
+	hasher              Hasher
+	locationsPerElement uint64
+	locationsCount      uint64
 }
 
-func New(locationsCount, locationsPerElement int) *ParallelBloomFilter {
-	return &ParallelBloomFilter{
+func NewHashingStrategy(hasher Hasher, locationsCount, locationsPerElement uint64) *HashingStrategy {
+	return &HashingStrategy{
+		hasher:              hasher,
 		locationsPerElement: locationsPerElement,
-		locations:           make([]biter.Bits, locationsCount),
+		locationsCount:      locationsCount,
 	}
 }
 
-func (pbf *ParallelBloomFilter) Put(hasher Hasher, slot biter.Bits, element []byte) {
-	hashedElement := hasher(element)
+func (strategy *HashingStrategy) New() ParallelBloomFilter {
+	return make(ParallelBloomFilter, strategy.locationsCount)
+}
+
+func (strategy *HashingStrategy) Put(pbf ParallelBloomFilter, slot biter.Bits, element []byte) {
+	hashedElement := strategy.hasher(element)
 	combinedHash := hashedElement[0]
-	locationsCount := uint64(len(pbf.locations))
-	for i := 0; i < pbf.locationsPerElement; i++ {
-		pbf.locations[(combinedHash&math.MaxUint64)%locationsCount] |= slot
+	locationsCount := strategy.locationsCount
+	for i := uint64(0); i < strategy.locationsPerElement; i++ {
+		pbf[(combinedHash&math.MaxUint64)%locationsCount] |= slot
 		combinedHash += hashedElement[1]
 	}
 }
 
-func (pbf *ParallelBloomFilter) Find(hasher Hasher, element []byte) biter.Bits {
-	hashedElement := hasher(element)
+func (strategy *HashingStrategy) Find(pbf ParallelBloomFilter, element []byte) biter.Bits {
+	hashedElement := strategy.hasher(element)
 	combinedHash := hashedElement[0]
-	locationsCount := uint64(len(pbf.locations))
+	locationsCount := strategy.locationsCount
 	result := biter.SetAllBits
-	for i := 0; i < pbf.locationsPerElement; i++ {
-		result &= pbf.locations[(combinedHash&math.MaxUint64)%locationsCount]
+	for i := uint64(0); i < strategy.locationsPerElement; i++ {
+		result &= pbf[(combinedHash&math.MaxUint64)%locationsCount]
 		combinedHash += hashedElement[1]
 	}
 	return result
