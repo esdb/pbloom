@@ -24,6 +24,18 @@ func NewHashingStrategy(hasher Hasher, locationsCount, locationsPerElement uint6
 	}
 }
 
+func (strategy *HashingStrategy) HashStage1(element []byte) HashedElement {
+	return strategy.hasher(element)
+}
+
+func (strategy *HashingStrategy) HashStage2(hashedElement HashedElement) BloomElement {
+	return hashedElement.Hash(strategy.locationsPerElement)
+}
+
+func (strategy *HashingStrategy) Hash(element []byte) BloomElement {
+	return strategy.hasher(element).Hash(strategy.locationsPerElement)
+}
+
 func (strategy *HashingStrategy) New() ParallelBloomFilter {
 	return make(ParallelBloomFilter, strategy.locationsCount)
 }
@@ -46,6 +58,20 @@ func (strategy *HashingStrategy) Find(pbf ParallelBloomFilter, element []byte) b
 	for i := uint64(0); i < strategy.locationsPerElement; i++ {
 		result &= pbf[(combinedHash&math.MaxUint64)%locationsCount]
 		combinedHash += hashedElement[1]
+	}
+	return result
+}
+
+func (pbf ParallelBloomFilter) Put(slot biter.Bits, element BloomElement) {
+	for _, location := range element {
+		pbf[location] |= slot
+	}
+}
+
+func (pbf ParallelBloomFilter) Find(element BloomElement) biter.Bits {
+	result := biter.SetAllBits
+	for _, location := range element {
+		result &= pbf[location]
 	}
 	return result
 }
