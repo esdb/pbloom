@@ -2,6 +2,7 @@ package pbloom
 
 import (
 	"math"
+	"unsafe"
 )
 
 // element => hash1,hash2 => k locations
@@ -19,4 +20,8 @@ func (hashedElement HashedElement) Hash(locationsCount uint64) BloomElement {
 		combinedHash += hashedElement[1]
 	}
 	return kHashedElement
+}
+
+func (hashedElement HashedElement) DownCastToUint32() uint32 {
+	return *(*uint32)(unsafe.Pointer(&hashedElement[0]))
 }
