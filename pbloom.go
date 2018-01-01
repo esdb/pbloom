@@ -29,11 +29,11 @@ func (strategy *HashingStrategy) HashStage1(element []byte) HashedElement {
 }
 
 func (strategy *HashingStrategy) HashStage2(hashedElement HashedElement) BloomElement {
-	return hashedElement.Hash(strategy.locationsPerElement)
+	return hashedElement.Hash(strategy.locationsPerElement, strategy.locationsCount)
 }
 
 func (strategy *HashingStrategy) Hash(element []byte) BloomElement {
-	return strategy.hasher(element).Hash(strategy.locationsPerElement)
+	return strategy.hasher(element).Hash(strategy.locationsPerElement, strategy.locationsCount)
 }
 
 func (strategy *HashingStrategy) New() ParallelBloomFilter {
