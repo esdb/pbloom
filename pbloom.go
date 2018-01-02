@@ -7,7 +7,7 @@ import (
 
 const SlotNotFound = biter.NotFound
 
-// 64 slot bloom filter
+// 64 slotMask bloom filter
 type ParallelBloomFilter []biter.Bits
 
 type HashingStrategy struct {
@@ -40,31 +40,31 @@ func (strategy *HashingStrategy) New() ParallelBloomFilter {
 	return make(ParallelBloomFilter, strategy.locationsCount)
 }
 
-func (strategy *HashingStrategy) Put(pbf ParallelBloomFilter, slot biter.Bits, element []byte) {
+func (strategy *HashingStrategy) Put(pbf ParallelBloomFilter, slotMask biter.Bits, element []byte) {
 	hashedElement := strategy.hasher(element)
-	combinedHash := hashedElement[0]
+	combinedHash := uint64(hashedElement[0])
 	locationsCount := strategy.locationsCount
 	for i := uint64(0); i < strategy.locationsPerElement; i++ {
-		pbf[(combinedHash&math.MaxUint64)%locationsCount] |= slot
-		combinedHash += hashedElement[1]
+		pbf[(combinedHash&math.MaxUint64)%locationsCount] |= slotMask
+		combinedHash += uint64(hashedElement[1])
 	}
 }
 
 func (strategy *HashingStrategy) Find(pbf ParallelBloomFilter, element []byte) biter.Bits {
 	hashedElement := strategy.hasher(element)
-	combinedHash := hashedElement[0]
+	combinedHash := uint64(hashedElement[0])
 	locationsCount := strategy.locationsCount
 	result := biter.SetAllBits
 	for i := uint64(0); i < strategy.locationsPerElement; i++ {
 		result &= pbf[(combinedHash&math.MaxUint64)%locationsCount]
-		combinedHash += hashedElement[1]
+		combinedHash += uint64(hashedElement[1])
 	}
 	return result
 }
 
-func (pbf ParallelBloomFilter) Put(slot biter.Bits, element BloomElement) {
+func (pbf ParallelBloomFilter) Put(slotMask biter.Bits, element BloomElement) {
 	for _, location := range element {
-		pbf[location] |= slot
+		pbf[location] |= slotMask
 	}
 }
 

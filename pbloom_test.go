@@ -14,7 +14,7 @@ func Test_one_location(t *testing.T) {
 	strategy.Put(pbf, slot17, []byte("hello"))
 	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(biter.Bits(0), result)
-	should.Equal(17, result.ScanForward()())
+	should.Equal(biter.Slot(17), result.ScanForward()())
 	result = strategy.Find(pbf, []byte("world2"))
 	should.Equal(biter.Bits(0), result)
 }
@@ -27,7 +27,7 @@ func Test_seven_locations(t *testing.T) {
 	strategy.Put(pbf, slot17, []byte("hello"))
 	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(0, result)
-	should.Equal(17, result.ScanForward()())
+	should.Equal(biter.Slot(17), result.ScanForward()())
 }
 
 func Test_two_slots(t *testing.T) {
@@ -41,8 +41,8 @@ func Test_two_slots(t *testing.T) {
 	result := strategy.Find(pbf, []byte("hello"))
 	should.NotEqual(biter.Bits(0), result)
 	iter := result.ScanForward()
-	should.Equal(17, iter())
-	should.Equal(18, iter())
+	should.Equal(biter.Slot(17), iter())
+	should.Equal(biter.Slot(18), iter())
 	should.Equal(SlotNotFound, iter())
 }
 
@@ -56,6 +56,25 @@ func Test_pre_hashing(t *testing.T) {
 	result := pbf.Find(element)
 	should.NotEqual(biter.Bits(0), result)
 	iter := result.ScanForward()
-	should.Equal(18, iter())
-	should.Equal(64, iter())
+	should.Equal(biter.Slot(18), iter())
+	should.Equal(biter.Slot(64), iter())
+}
+
+func Test_batch_put3(t *testing.T) {
+	should := require.New(t)
+	locationsPerElement := uint64(3)
+	strategy1 := NewHashingStrategy(HasherFnv, 256, locationsPerElement)
+	strategy2 := NewHashingStrategy(HasherFnv, 1024, locationsPerElement)
+	strategy3 := NewHashingStrategy(HasherFnv, 7777, locationsPerElement)
+	pbf1 := strategy1.New()
+	pbf2 := strategy2.New()
+	pbf3 := strategy3.New()
+	hashedElement := HasherFnv([]byte("hello"))
+	slot18 := biter.SetBits[18]
+	BatchPut3(slot18, hashedElement, locationsPerElement, pbf1, pbf2, pbf3)
+	result := strategy2.Find(pbf2, []byte("hello"))
+	should.NotEqual(biter.Bits(0), result)
+	iter := result.ScanForward()
+	should.Equal(biter.Slot(18), iter())
+	should.Equal(biter.Slot(64), iter())
 }
