@@ -60,21 +60,25 @@ func Test_pre_hashing(t *testing.T) {
 	should.Equal(biter.Slot(64), iter())
 }
 
-func Test_batch_put3(t *testing.T) {
+func Test_batch_put(t *testing.T) {
 	should := require.New(t)
-	locationsPerElement := uint64(3)
-	strategy1 := NewHashingStrategy(HasherFnv, 256, locationsPerElement)
-	strategy2 := NewHashingStrategy(HasherFnv, 1024, locationsPerElement)
-	strategy3 := NewHashingStrategy(HasherFnv, 7777, locationsPerElement)
+	strategy1 := NewHashingStrategy(HasherFnv, 256, BatchPutLocationsPerElement)
+	strategy2 := NewHashingStrategy(HasherFnv, 1024, BatchPutLocationsPerElement)
+	strategy3 := NewHashingStrategy(HasherFnv, 7777, BatchPutLocationsPerElement)
 	pbf1 := strategy1.New()
 	pbf2 := strategy2.New()
 	pbf3 := strategy3.New()
 	hashedElement := HasherFnv([]byte("hello"))
 	slot18 := biter.SetBits[18]
-	BatchPut3(slot18, hashedElement, locationsPerElement, pbf1, pbf2, pbf3)
+	BatchPut(hashedElement, slot18, slot18, slot18, pbf1, pbf2, pbf3)
 	result := strategy2.Find(pbf2, []byte("hello"))
 	should.NotEqual(biter.Bits(0), result)
 	iter := result.ScanForward()
+	should.Equal(biter.Slot(18), iter())
+	should.Equal(biter.Slot(64), iter())
+	result = strategy3.Find(pbf3, []byte("hello"))
+	should.NotEqual(biter.Bits(0), result)
+	iter = result.ScanForward()
 	should.Equal(biter.Slot(18), iter())
 	should.Equal(biter.Slot(64), iter())
 }
